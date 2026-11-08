@@ -1,0 +1,7 @@
+# dsh-token-usage bundle patch
+#
+# DSH 的 bundle manifest（package.json 里的 dsh.bundle.patch）指向本文件。
+# 单包单插件：insert 一条记录即可，cordis loader 会 import 包入口的 apply(ctx)。
+- insert:
+    - id: dsh-token-usage
+      name: dsh-token-usage

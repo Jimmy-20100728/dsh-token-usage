@@ -1,0 +1,7 @@
+# 与 cordis.patch.yml 内容保持一致。
+#
+# 说明：DSH 实际读取的是 package.json → dsh.bundle.patch 指向的 cordis.patch.yml；
+# 本文件是同一份加载声明的镜像副本（便于按传统 patches/bundle.yaml 结构审阅/分发）。
+- insert:
+    - id: dsh-token-usage
+      name: dsh-token-usage
