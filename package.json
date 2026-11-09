@@ -1,6 +1,6 @@
 {
   "name": "dsh-token-usage",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Token 用量分析：导入 DeepSeek 官方导出 ZIP / 通用 CSV / JSON，本地解析并可视化费用趋势、缓存命中、模型与 API Key 对比。",
   "type": "module",
   "main": "lib/index.js",
