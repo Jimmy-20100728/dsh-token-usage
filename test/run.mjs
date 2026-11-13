@@ -265,6 +265,41 @@ if (await stat(zipPath).then(() => true).catch(() => false)) {
   console.log('  · 跳过（test/export.zip 不存在；先跑一次本脚本生成 fixtures，再把 test/.tmp/fixtures 里的 amount/cost 两个 CSV 打成 test/export.zip 后重跑）');
 }
 
+// ─────────────────────────── 6b. 跨文件重叠去重 ───────────────────────────
+console.log('\n[6b] 重叠账期去重');
+{
+  // 构造一个“时间范围相交”的导出：只含 8/1、8/2 两天的 amount 行
+  const lines = amountText.split('\n');
+  const overlapRows = lines.filter((line, i) => i === 0 || /2026-08-0[12]T/.test(line));
+  check('重叠文件确实筛出了 2 天', overlapRows.length > 3, overlapRows.length);
+  const overlapText = overlapRows.join('\n');
+
+  const single = ingestFiles([
+    { name: 'amount-2026-08.csv', buffer: buf(amountText) },
+    { name: 'cost-2026-08.csv', buffer: buf(costText) },
+  ]);
+  const overlapped = ingestFiles([
+    { name: 'amount-2026-08.csv', buffer: buf(amountText) },
+    { name: 'amount-overlap-08.csv', buffer: buf(overlapText) },
+    { name: 'cost-2026-08.csv', buffer: buf(costText) },
+  ]);
+  check('去重后 token 与单份一致', overlapped.stats.totals.tokens === single.stats.totals.tokens, [
+    overlapped.stats.totals.tokens,
+    single.stats.totals.tokens,
+  ]);
+  check('去重后请求数不翻倍', overlapped.stats.totals.requests === single.stats.totals.requests, [
+    overlapped.stats.totals.requests,
+    single.stats.totals.requests,
+  ]);
+  check('去重统计 active', overlapped.stats.dedupe.active === true, overlapped.stats.dedupe);
+  check('去重计入了重复单元格', overlapped.stats.dedupe.cells > 0, overlapped.stats.dedupe.cells);
+  check('重叠天数 = 2', overlapped.stats.dedupe.overlapDays === 2, overlapped.stats.dedupe.overlapDays);
+  check('有去重告警', (overlapped.warnings || []).some((w) => w.includes('去重')), overlapped.warnings);
+  const na = analyze(overlapped, { bucket: 'day' });
+  check('去重后费用不分摊两份', na.quality.unmatchedBilledCost === 0, na.quality.unmatchedBilledCost);
+  check('未发生去重时 active=false', single.stats.dedupe.active === false, single.stats.dedupe);
+}
+
 // ─────────────────────────── 7. store ───────────────────────────
 console.log('\n[7] 数据集仓库');
 {
